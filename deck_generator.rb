@@ -48,4 +48,8 @@ def init_draw(number_of_cards)
   puts "nouveau deck"+  deck.to_s
 end
 
+def draw()
+  
+end
+
 init_draw(7)
