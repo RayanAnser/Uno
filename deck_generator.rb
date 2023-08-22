@@ -45,9 +45,9 @@ end
 def init_draw(number_of_cards)
   deck = deck_suffler()
   puts "deck originel" + deck.to_s
-  player1 = [20]
+  player1 = [20,16]
   player2 = []
-  played_card = []
+  played_cards = []
   number_of_cards.times do
     card = deck.shift
     player1 << card
@@ -56,14 +56,14 @@ def init_draw(number_of_cards)
     player2 << card
   end
 
-  played_card << deck.shift
+  played_cards << deck.shift
 
   puts "main1=" + player1.to_s
   puts "main2=" + player2.to_s
-  puts "stack=" + played_card.to_s
+  puts "stack=" + played_cards.to_s
   puts "nouveau deck"+  deck.to_s
 
-  [player1, player2, played_card, deck]
+  [player1, player2, played_cards, deck]
 end
 # ///////////////////////////////////////////////////////////
 
@@ -78,23 +78,23 @@ end
 def valid_play?(card, top_card)
   color_match = card[-1] == top_card[-1]  # Vérifie si les couleurs correspondent
   number_match = card[0..-2].to_i == top_card[0..-2].to_i  # Vérifie si les numéros correspondent
-  special_cards = ["20", "21", "22", "23"].include?(card) # Laisse passer les cartes spéciales
+  special_cards = ["16","17","18","19","20","21","22","23"].include?(card) # Laisse passer les cartes spéciales
 
   color_match || number_match || special_cards # La carte est valide si les couleurs ou les numéros correspondent
 end
 
-def deposit_card(player, played_card, deck)
+def deposit_card(player, played_cards, deck)
   puts "Choisissez une carte de votre main à déposer sur la pile (par exemple, '4r' pour 4 rouge): ou piochez avec p"
   card_choice = gets.chomp  # Demander au joueur de saisir la carte
 
   if card_choice == "p"
     player << deck.shift
     puts "Main player après pioche=" + player.to_s
-  elsif player.map(&:to_s).include?(card_choice) && valid_play?(card_choice, played_card.last)
-    played_card << card_choice     # Ajouter la carte à la pile
+  elsif player.map(&:to_s).include?(card_choice) && valid_play?(card_choice, played_cards.last)
+    played_cards << card_choice     # Ajouter la carte à la pile
     player.delete(card_choice)     # Retirer la carte de la main du joueur
     puts "Main player après dépôt=" + player.to_s
-    puts "Stack après dépôt=" + played_card.to_s
+    puts "Stack après dépôt=" + played_cards.to_s
     return card_choice
   elsif !player.map(&:to_s).include?(card_choice)
     puts "La carte choisie n'est pas dans votre main."
@@ -103,32 +103,37 @@ def deposit_card(player, played_card, deck)
   end
 end
 
-player1, player2, played_card, deck = init_draw(7)  # Obtient les informations nécessaires de la fonction init_draw
+player1, player2, played_cards, deck = init_draw(7)  # Obtient les informations nécessaires de la fonction init_draw
 
-def card_plus4(player, played_card, deck)
-  if played_card == "20" || played_card == "21" || played_card == "22" || played_card == "23"
+def card_plus4(player, played_cards, deck)
+  if played_cards == "20" || played_cards == "21" || played_cards == "22" || played_cards == "23"
     4.times do
       player << deck.shift
     end
+    puts "main2=" + player.to_s
   end
-  return true
 end
 
-def card_color_choice
-
+def card_color_choice(played_cards)
+  if played_cards == "16" || played_cards == "17" || played_cards == "18" || played_cards == "19"
+    puts "Choississez une nouvelle couleur (b, g, r, y)"
+    new_color = gets.chomp.downcase  # Demander au joueur de saisir la carte
+    played_cards << new_color  # Remplacez la dernière lettre par la nouvelle couleur
+    puts played_cards
+  end
 end
 
-while deck.length > 0
+
+# ///////////////////////////////////////////////////////////
+
+while player1.length > 0 || player2.length > 0
   # Logique pour le joueur 1
   puts "C'est au tour du joueur 1."
-  deposited_card = deposit_card(player1, played_card, deck) # Appelle la fonction pour déposer une carte pour le joueur 1
-  if card_plus4(player2, played_card, deck)
-    card_plus4(player2, played_card, deck)
-    puts "main2=" + player2.to_s
-  end
-
+  deposited_card = deposit_card(player1, played_cards, deck) # Appelle la fonction pour déposer une carte pour le joueur 1
+  card_plus4(player2, deposited_card, deck)
+  card_color_choice(deposited_card)
 
   # Logique pour le joueur 2
   puts "C'est au tour du joueur 2."
-  deposit_card(player2, played_card, deck)
+  deposit_card(player2, played_cards, deck)
 end
