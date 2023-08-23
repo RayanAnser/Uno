@@ -79,19 +79,23 @@ def valid_play?(card, top_card)
 end
 
 def deposit_card(player, played_cards, deck)
-  puts "Choisissez une carte de votre main à déposer sur la pile (par exemple, '4r' pour 4 rouge): ou piochez avec p"
-  card_choice = gets.chomp.to_s  # Demander au joueur de saisir la carte
+  loop do
+    puts "Choisissez une carte de votre main à déposer sur la pile (par exemple, '4r' pour 4 rouge): ou piochez avec p"
+    card_choice = gets.chomp.to_s  # Demander au joueur de saisir la carte
 
-  if card_choice == "p"
-    player << deck.shift
-  elsif player.map(&:to_s).include?(card_choice) && valid_play?(card_choice, played_cards.last)
-    played_cards << card_choice  # Ajouter la carte à la pile
-    player.delete(card_choice)  # Retirer la carte de la main du joueur
-    return card_choice
-  elsif !player.map(&:to_s).include?(card_choice)
-    puts "La carte choisie n'est pas dans votre main."
-  else
-    puts "Vous ne pouvez pas jouer cette carte."
+    if card_choice == "p"
+      player << deck.shift
+    elsif player.map(&:to_s).include?(card_choice) && valid_play?(card_choice, played_cards.last)
+      played_cards << card_choice  # Ajouter la carte à la pile
+      player.delete(card_choice)  # Retirer la carte de la main du joueur
+      return card_choice
+    elsif !player.map(&:to_s).include?(card_choice)
+      puts "La carte choisie n'est pas dans votre main."
+      return nil
+    else
+      puts "Vous ne pouvez pas jouer cette carte."
+      return nil
+    end
   end
 end
 
@@ -100,6 +104,8 @@ player1, player2, played_cards, deck = init_draw(7)  # Obtient les informations 
 # Special Rules ///////////////////////////////////////////////////////////
 
 def card_plus2(player, played_card, deck)
+  return false if played_card.nil?
+
   if played_card.include?("10") || played_card.include?("11")
     2.times do
       player << deck.shift
@@ -109,6 +115,8 @@ def card_plus2(player, played_card, deck)
 end
 
 def card_reverse_turn(current_player, played_card)
+  return false if played_card.nil?
+
   if played_card.include?("12") || played_card.include?("13")
     puts "Sens de jeu inversé !"
     return !current_player
@@ -117,6 +125,8 @@ def card_reverse_turn(current_player, played_card)
 end
 
 def card_skip_turn(current_player, played_card)
+  return false if played_card.nil?
+
   if played_card.include?("14") || played_card.include?("15")
     puts "Tour sauté !"
     return true
@@ -128,10 +138,9 @@ def card_color_choice(played_card, played_cards, player)
   if played_card == "16" || played_card == "17" || played_card == "18" || played_card == "19"
     puts "Choississez une nouvelle couleur (b, g, r, y)"
     new_color = gets.chomp
-    played_cards << new_color # Ajoutez la couleur choisie au stack de cartes
+    played_cards << new_color # Ajouter la couleur choisie au stack de cartes
   end
 end
-
 
 def card_plus4(player, played_card, deck)
   if played_card == "20" || played_card == "21" || played_card == "22" || played_card == "23"
@@ -141,6 +150,55 @@ def card_plus4(player, played_card, deck)
     puts "Nouvelle main player" + "#{player}"
   end
 end
+
+# Playing ///////////////////////////////////////////////////////////
+play_order = false # Signifie que c'est le tour du joueur 1
+
+while player1.length > 0 || player2.length > 0
+  puts "\n\nC'est au tour du joueur #{play_order ? 2 : 1}.\n\n"
+  puts "Stack de cartes: #{played_cards}"
+  if !play_order
+    puts "Main du joueur 1: #{player1}\n\n"
+  else
+    puts "Main du joueur 2: #{player2}\n\n"
+  end
+
+  if !play_order
+    # Logique pour le joueur 1
+    deposited_card = deposit_card(player1, played_cards, deck) # Appelle la fonction pour déposer une carte pour le joueur 1
+    if deposited_card
+      play_order = card_reverse_turn(play_order, deposited_card)
+    end
+    if card_skip_turn(play_order, deposited_card)
+      next
+    end
+
+    card_plus2(player2, deposited_card, deck)
+    card_plus4(player2, deposited_card, deck)
+    card_color_choice(deposited_card, played_cards, player1)
+  else
+    # Logique pour le joueur 2
+    deposited_card = deposit_card(player2, played_cards, deck)
+
+    if deposited_card
+      play_order = card_reverse_turn(play_order, deposited_card)
+    end
+    if card_skip_turn(play_order, deposited_card)
+      next
+    end
+
+    card_plus2(player1, deposited_card, deck)
+    card_plus4(player1, deposited_card, deck)
+    card_color_choice(deposited_card, played_cards, player2)
+  end
+
+  play_order = !play_order
+end
+
+
+
+
+
 
 
 # Playing ///////////////////////////////////////////////////////////
@@ -172,62 +230,6 @@ end
 
 #   play_order = !play_order
 # end
-
-
-
-
-# Playing ///////////////////////////////////////////////////////////
-play_order = false # Signifie que c'est le tour du joueur 1
-
-while player1.length > 0 && player2.length > 0
-  puts "\n\nC'est au tour du joueur #{play_order ? 2 : 1}.\n\n"
-  puts "Stack de cartes: #{played_cards}"
-  if !play_order
-    puts "Main du joueur 1: #{player1}\n\n"
-  else
-    puts "Main du joueur 2: #{player2}\n\n"
-  end
-
-  if !play_order
-    # Logique pour le joueur 1
-    deposited_card = deposit_card(player1, played_cards, deck) # Appelle la fonction pour déposer une carte pour le joueur 1
-
-    play_order = card_reverse_turn(play_order, deposited_card)
-    if card_skip_turn(play_order, deposited_card)
-      next
-    end
-
-    card_plus2(player2, deposited_card, deck)
-    card_plus4(player2, deposited_card, deck)
-    card_color_choice(deposited_card, played_cards, player1)
-    # puts "////////////////////////////////////////////////
-    # Stack de cartes : #{played_cards}"
-    # puts "Main du joueur 1 : #{player1}"
-  else
-    # Logique pour le joueur 2
-    deposited_card = deposit_card(player2, played_cards, deck)
-
-    play_order = card_reverse_turn(play_order, deposited_card)
-    if card_skip_turn(play_order, deposited_card)
-      next
-    end
-
-    card_plus2(player1, deposited_card, deck)
-    card_plus4(player1, deposited_card, deck)
-    card_color_choice(deposited_card, played_cards, player2)
-    # puts "////////////////////////////////////////////////
-    # Stack de cartes : #{played_cards}"
-    # puts "Main du joueur 2 : #{player2}"
-  end
-
-  play_order = !play_order
-end
-
-
-
-
-
-
 
 
 
